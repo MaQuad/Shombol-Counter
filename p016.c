@@ -1,14 +1,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+#include <mmsystem.h>
 #pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "winmm.lib")
 #define MY_BUTTON_ID 1
-int Shombol = 0;                   
+int Shombol = 0;              
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch(uMsg) {
         case WM_COMMAND:
-            if(LOWORD(wParam) == MY_BUTTON_ID) {  
+            if(LOWORD(wParam) == MY_BUTTON_ID) {
                 ++Shombol;
+                if (Shombol%100==0)
+                {
+                PlaySound (TEXT("Sounds\\sound2.wav"), NULL, SND_FILENAME | SND_ASYNC);
+                }
+                else if (Shombol%10==0)
+                {
+                PlaySound (TEXT("Sounds\\sound3.wav"), NULL, SND_FILENAME | SND_ASYNC);
+                }
+                else
+                {
+                PlaySound (TEXT("Sounds\\sound.wav"), NULL, SND_FILENAME | SND_ASYNC);
+                }
             }
             InvalidateRect(hwnd, NULL, TRUE);
             UpdateWindow(hwnd); 
@@ -17,11 +31,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
+            SetTextColor(hdc, RGB(0, 0, 0));
+            TextOut(hdc, 320, 50, "Your Shombol Size:", 18);
             char buf[50];
             sprintf(buf, "%d", Shombol);
-            SetTextColor(hdc, RGB(0,0,0));
             SetBkMode(hdc, TRANSPARENT);
-            TextOut(hdc, 390, 70, buf, strlen(buf));
+            TextOut(hdc, 380, 70, buf, strlen(buf));
 
             EndPaint(hwnd, &ps);
         }
@@ -39,7 +54,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     }
 }
 int main() {
-    FILE *f = fopen("YourScore.txt", "r");
+    FILE *f = fopen("YourScore.txt", "r"); 
         if(f) {
             fscanf(f, "%d", &Shombol);
             fclose(f);
@@ -56,7 +71,7 @@ int main() {
         wc.hCursor = LoadCursor(NULL, IDC_ARROW);   
     RegisterClassEx(&wc);
     HWND hwnd = CreateWindowEx(0, "mainPrograminterface", "Shombol counter", WS_CAPTION | WS_SYSMENU, CW_USEDEFAULT, CW_USEDEFAULT,800, 600, NULL, NULL, GetModuleHandle(NULL), NULL);
-    HWND hwndButton = CreateWindow("BUTTON", "Click Me!", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 340, 260, 120, 80,hwnd, (HMENU)MY_BUTTON_ID, hInstance, NULL);
+    HWND hwndButton = CreateWindow("BUTTON", "Shombol!", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 340, 260, 120, 80,hwnd, (HMENU)MY_BUTTON_ID, hInstance, NULL);
     ShowWindow(hwnd, SW_SHOW);
     UpdateWindow(hwnd);
     MSG msg = {0};
