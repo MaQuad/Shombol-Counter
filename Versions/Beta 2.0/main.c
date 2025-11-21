@@ -1,4 +1,4 @@
-// Library's that Program needs them!
+﻿// Library's that Program needs them!
     #include <stdio.h> //standard input output 
     #include <stdlib.h> //for system
     #include <stdbool.h> //for Bool varibles
@@ -19,55 +19,58 @@
     // Shop window Buttons
         #define AutoClicker_BUTTON_ID 3
         // Sound Buttons
-            #define ASound_Pack_ID 4
-            #define RSound_Pack_ID 51
-            #define ASound_Test 6
-            #define RSound_Test 7
+        #define ASound_Pack_ID 4
+        #define RSound_Pack_ID 51
+        #define ASound_Test 6
+        #define RSound_Test 7
         // BackGround Color Buttons
-            #define BGC_white 8
-            #define BGC_red 9
-            #define BGC_green 10
-            #define BGC_yellow 11
-            #define BGC_blue 12
+        #define BGC_white 8
+        #define BGC_red 9
+        #define BGC_green 10
+        #define BGC_yellow 11
+        #define BGC_blue 12
 
 // Golbal variables 
-    HWND hwndShop = NULL;
-    HWND hwnd = NULL;
-    HANDLE hAutoThread = NULL;
-    bool AutoCT;
-    time_t Rsec;
-    struct Soundpack
+    HWND hwndShop = NULL; // for Shop window handeler
+    HWND hwnd = NULL; // for Main window handeler
+    HANDLE AutoCSThread = NULL; // autoclicker thread handeler
+    bool AutoCT; // the state of Autoclicker thread | true = autoclicker is on , false = autoclicker is off/its not purchased yet
+    time_t Rsec; // time that we use for calculating Autoclicker in time the program wasnt running
+    bool SoundpackAPS; // Status of Active Soundpack A
+    bool SoundpackRPS; // Status of Active Soundpack R
+    // Soundpack Path structure
+    struct Soundpack  
     {
-        wchar_t sound1[50];
-        wchar_t sound2[50];
-        wchar_t sound3[50];
+        wchar_t sound1[50]; // every 100 shombols
+        wchar_t sound2[50]; // every 10 shombols
+        wchar_t sound3[50]; // every shombols
     };
     struct Soundpack SPS = {0};
     // Save File Structure
         struct SF
         {
-            wchar_t SFSignature [5];
-            int Soundpack;
-            int Shombol;
-            int AutoCS;
-            int BGC [3];
-            time_t Bsec;
+            wchar_t SFSignature [5]; // File Signature
+            int Soundpack; // Soundpack number | 1 = A soundpack(by Aria), 2 = R soundpack(by Rasol)
+            int Shombol; // the points
+            int AutoCS; // AutoClicker Level
+            int BGC [3]; // Background color
+            time_t Bsec; // the time that Program Stopped ==> used for Autoclicker when program wasnt running
         };
         struct SF SFS = {0};
 
-// Auto CLicker Function
+// Auto CLicker Function (thread)
     DWORD WINAPI AutoClicker(LPVOID param)
     {
-        if ((SFS.AutoCS > 1 ) && (AutoCT == TRUE))
+        if ((SFS.AutoCS >= 2 ) && (AutoCT == TRUE)) // if we have autoclicker and also when its Active the Autoclicker starts
         {
             while (AutoCT == TRUE)
             {
-                SFS.Shombol += (SFS.AutoCS - 1);
-                PostMessage(hwnd, WM_APP + 1, 0, 0);
-                Sleep(1000);
+                SFS.Shombol += (SFS.AutoCS-1);
+                PostMessage(hwnd, WM_APP + 1, 0, 0); // for updating the window to show new value of Shombol
+                Sleep(1000); // simulating 1 secound
             }
         }
-        return 0;
+        return 0; // death of thread
     }
 
 // window process
@@ -76,7 +79,7 @@
         {
         switch(uMsg) 
         {
-            case WM_APP + 1:
+            case WM_APP + 1:                             // for updating main window
                 InvalidateRect(hwnd, NULL, TRUE);
             break;
             case WM_COMMAND:
@@ -96,22 +99,25 @@
                         } 
                 }
                 if(LOWORD(wParam) == SHOP_BUTTON_ID) {
-                hwndShop = CreateWindowEx(0, L"Shopwindow", L"Shombol Shop", WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, 200, 200, 700, 400, hwnd, NULL, GetModuleHandle(NULL), NULL);
-                HWND shopOP1 = CreateWindowEx(0, L"BUTTON", L"Auto Clikcer", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 10, 10, 100, 50, hwndShop, (HMENU)AutoClicker_BUTTON_ID, GetModuleHandle(NULL), NULL);
-                // SoundPack Buy Buttons
-                    HWND shopOPS1 = CreateWindowEx(0, L"BUTTON", L"A Sound Pack", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 10, 70, 100, 50, hwndShop, (HMENU)ASound_Pack_ID, GetModuleHandle(NULL), NULL);
-                    HWND shopOPS2 = CreateWindowEx(0, L"BUTTON", L"R Sound Pack", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 10, 130, 100, 50, hwndShop, (HMENU)RSound_Pack_ID, GetModuleHandle(NULL), NULL);
-                    // SoundPack Test Buttons
+                    if (hwndShop == NULL)
+                    {
+                        hwndShop = CreateWindowEx(0, L"Shopwindow", L"Shombol Shop", WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX, 200, 200, 700, 400, hwnd, NULL, GetModuleHandle(NULL), NULL);
+                        HWND shopOP1 = CreateWindowEx(0, L"BUTTON", L"Auto Clikcer", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 10, 10, 100, 50, hwndShop, (HMENU)AutoClicker_BUTTON_ID, GetModuleHandle(NULL), NULL);
+                        // SoundPack Buy Buttons
+                        HWND shopOPS1 = CreateWindowEx(0, L"BUTTON", L"A Sound Pack", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 10, 70, 100, 50, hwndShop, (HMENU)ASound_Pack_ID, GetModuleHandle(NULL), NULL);
+                        HWND shopOPS2 = CreateWindowEx(0, L"BUTTON", L"R Sound Pack", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 10, 130, 100, 50, hwndShop, (HMENU)RSound_Pack_ID, GetModuleHandle(NULL), NULL);
+                        // SoundPack Test Buttons
                         HWND shopOPST1 = CreateWindowEx(0, L"BUTTON", L"Test", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 120, 95, 40, 25, hwndShop, (HMENU)ASound_Test, GetModuleHandle(NULL), NULL);
                         HWND shopOPST2 = CreateWindowEx(0, L"BUTTON", L"Test", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 120, 155, 40, 25, hwndShop, (HMENU)RSound_Test, GetModuleHandle(NULL), NULL);
-                // BackGround Color Buttons
-                    HWND shopOPBGC1 = CreateWindowEx(0, L"BUTTON", L"White BG", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 10, 190, 100, 50, hwndShop, (HMENU)BGC_white, GetModuleHandle(NULL), NULL);
-                    HWND shopOPBGC2 = CreateWindowEx(0, L"BUTTON", L"Red BG", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 120, 190, 100, 50, hwndShop, (HMENU)BGC_red, GetModuleHandle(NULL), NULL);
-                    HWND shopOPBGC3 = CreateWindowEx(0, L"BUTTON", L"Green BG", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 230, 190, 100, 50, hwndShop, (HMENU)BGC_green, GetModuleHandle(NULL), NULL);
-                    HWND shopOPBGC4 = CreateWindowEx(0, L"BUTTON", L"Yellow BG", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 340, 190, 100, 50, hwndShop, (HMENU)BGC_yellow, GetModuleHandle(NULL), NULL);
-                    HWND shopOPBGC5 = CreateWindowEx(0, L"BUTTON", L"Blue BG", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 450, 190, 100, 50, hwndShop, (HMENU)BGC_blue, GetModuleHandle(NULL), NULL);
-                ShowWindow(hwndShop, SW_SHOW);
-                UpdateWindow(hwndShop);
+                        // BackGround Color Buttons
+                        HWND shopOPBGC1 = CreateWindowEx(0, L"BUTTON", L"White BG", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 10, 190, 100, 50, hwndShop, (HMENU)BGC_white, GetModuleHandle(NULL), NULL);
+                        HWND shopOPBGC2 = CreateWindowEx(0, L"BUTTON", L"Red BG", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 120, 190, 100, 50, hwndShop, (HMENU)BGC_red, GetModuleHandle(NULL), NULL);
+                        HWND shopOPBGC3 = CreateWindowEx(0, L"BUTTON", L"Green BG", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 230, 190, 100, 50, hwndShop, (HMENU)BGC_green, GetModuleHandle(NULL), NULL);
+                        HWND shopOPBGC4 = CreateWindowEx(0, L"BUTTON", L"Yellow BG", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 340, 190, 100, 50, hwndShop, (HMENU)BGC_yellow, GetModuleHandle(NULL), NULL);
+                        HWND shopOPBGC5 = CreateWindowEx(0, L"BUTTON", L"Blue BG", WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON, 450, 190, 100, 50, hwndShop, (HMENU)BGC_blue, GetModuleHandle(NULL), NULL);
+                        ShowWindow(hwndShop, SW_SHOW);
+                        UpdateWindow(hwndShop);
+                    }
                 }
                 InvalidateRect(hwnd, NULL, TRUE);
                 UpdateWindow(hwnd); 
@@ -152,9 +158,9 @@
             {
                 SFS.Bsec=Rsec;
                 AutoCT = FALSE;
-                if (hAutoThread != NULL) {
-                    WaitForSingleObject(hAutoThread, INFINITE);
-                    CloseHandle(hAutoThread);
+                if (AutoCSThread != NULL) {
+                    WaitForSingleObject(AutoCSThread, INFINITE);
+                    CloseHandle(AutoCSThread);
                 }
                 FILE *outputS = fopen("Save.sa", "wb");
                 fwrite(&SFS, sizeof(struct SF), 1, outputS);
@@ -174,9 +180,9 @@
                 case WM_COMMAND:
                     if (LOWORD(wParam) == AutoClicker_BUTTON_ID)
                     {
-                        if (SFS.AutoCS <= 10)
+                        if (SFS.AutoCS <= 11)
                         {
-                            if (SFS.Shombol >= (5000 *SFS.AutoCS))
+                            if (SFS.Shombol >= (5000 * SFS.AutoCS))
                             {
                                 SFS.Shombol -= (5000 * SFS.AutoCS);
                                 SFS.AutoCS++;
@@ -204,6 +210,7 @@
                     }
                     else if (LOWORD(wParam) == RSound_Pack_ID)
                     {
+                        SoundpackRPS = 1;
                         SFS.Soundpack = 2;
                         wcscpy_s(SPS.sound1, 50, L"Sounds\\Pr\\sound1.wav");
                         wcscpy_s(SPS.sound2, 50, L"Sounds\\Pr\\sound11.wav");
@@ -266,16 +273,17 @@
                     FillRect(hdc, &ps.rcPaint, brush);
                     DeleteObject(brush);
                     wchar_t AutoCSLevel [11];
-                    swprintf_s(AutoCSLevel, 11, L"Level: %d", SFS.AutoCS);
-                    TextOut(hdc, 115, 15, L"*Auto clicker have 10 levels and its mine for you even if the program closed!", lstrlenW(L"*Auto clicker have 10 levels and its mine for you even if the program closed!"));
+                    swprintf_s(AutoCSLevel, 11, L"Level: %d", SFS.AutoCS-1);
+                    TextOutW(hdc, 115, 15, L"*Auto clicker have 10 levels and its mine for you even if the program closed!", lstrlenW(L"*Auto clicker have 10 levels and its mine for you even if the program closed!"));
                     TextOut(hdc, 120, 30, AutoCSLevel, lstrlenW(AutoCSLevel));
-                    TextOut(hdc, 120, 70, L"*A Sound pack (defult Voice by Aria)", lstrlenW(L"*A Sound pack(defult Voice)"));
+                    TextOut(hdc, 120, 70, L"*A Sound pack (defult Voice by Aria)", lstrlenW(L"*A Sound pack (defult Voice by Aria)"));
                     TextOut(hdc, 120, 130, L"*R Sound pack (by Rasol)", lstrlenW(L" * R Sound pack(by Rasol)"));
 
                     EndPaint(hwnd, &ps);
                 }
                 break;
                 case WM_DESTROY:
+                    hwndShop = NULL;
                     DestroyWindow(hwnd);
                     return 0;
                 default:
@@ -285,23 +293,23 @@
         }
 
 // Main Function ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        int WINAPI wWinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nShowCmd)
+        int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
         {
             Rsec = time(NULL);
             FILE *inputS = fopen("Save.sa", "rb"); 
             if (inputS!=NULL)
             {
                 fread(&SFS, sizeof(struct SF), 1, inputS);
-                if (SFS.AutoCS >= 1)
+                if (SFS.AutoCS >= 2)
                 {
-                    SFS.Shombol=((int)(Rsec-SFS.Bsec)*(SFS.AutoCS)+SFS.Shombol)<<1;
+                    SFS.Shombol=((int)(Rsec-SFS.Bsec)*(SFS.AutoCS-1)+SFS.Shombol)<<1;
                 }
                 fclose(inputS);
             }
             else
             {
                SFS.Shombol=0;
-               SFS.AutoCS=0;
+               SFS.AutoCS=1;
                SFS.Soundpack=1;
                SFS.BGC[0] = 255;
                SFS.BGC[1] = 255;
@@ -346,7 +354,7 @@
 
             if (SFS.AutoCS > 1) {
                 AutoCT = TRUE;
-                hAutoThread = CreateThread(NULL, 0, AutoClicker, NULL, 0, NULL);
+                AutoCSThread = CreateThread(NULL, 0, AutoClicker, NULL, 0, NULL);
             }
 
         // Message Loop
